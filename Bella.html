@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Möhkikselle</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        canvas {
+            display: block;
+            background: #87CEEB;
+        }
+
+        .score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+            color: #333;
+        }
+
+        #startMenu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        #startMenu button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            background: #007BFF;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #startMenu button:hover {
+            background: #0056b3;
+        }
+		    #controls {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            z-index: 1000;
+        }
+    </style>
+</head>
+
+
+
+
+<body>
+    <div id="startMenu">
+        <h1>Do you want to be my Valentine? <3</h1>
+        <button id="yesButton">Yes</button>
+        <button id="noButton">No</button>
+    </div>
+	    <div id="controls" style="display: none;">
+        <p>Käytä Bella, niin saat tietää illan ohjelman :)</p>
+    </div>
+    <div class="score" style="display: none;">Pisteet: <span id="score">0</span></div>
+    <canvas id="gameCanvas" style="display: none;"></canvas>
+
+    <script>
+	
+	        const startMenu = document.getElementById('startMenu');
+        const gameCanvas = document.getElementById('gameCanvas');
+        const scoreDiv = document.querySelector('.score');
+		const controlsDiv = document.getElementById('controls');
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Load images
+        const girlImage = new Image();
+        girlImage.src = 'https://i.ibb.co/bN5k4MG/liisa-removebg-preview.png';
+        const dogImage = new Image();
+        dogImage.src = 'https://i.ibb.co/0cfd8dQ/Aihe-1-removebg-preview.png';
+        const bicycleImage = new Image();
+        bicycleImage.src = 'https://i.ibb.co/gyZ9mb2/food-delivery-service-fast-food-delivery-png-removebg-preview.png';
+        const wheelchairImage = new Image();
+        wheelchairImage.src = 'https://i.ibb.co/1XYXkSw/Namnl-s-design-4-removebg-preview.png';
+        const cloudImages = [
+            'https://i.ibb.co/B6QKfmN/loud-removebg-preview.png',
+            'https://i.ibb.co/tZy76Mq/loud-1-removebg-preview.png',
+            'https://i.ibb.co/Fgx2shw/loud-2-removebg-preview.png'
+        ].map(src => {
+            const img = new Image();
+            img.src = src;
+            return img;
+        });
+
+        // Handle Start Menu
+        document.getElementById('yesButton').addEventListener('click', () => {
+            startMenu.style.display = 'none';
+            gameCanvas.style.display = 'block';
+            scoreDiv.style.display = 'block';
+			controlsDiv.style.display = 'block';
+            startGame();
+        });
+
+        document.getElementById('noButton').addEventListener('click', () => {
+            const popup = window.open('', '', 'width=300,height=200');
+            popup.document.write('<h1>Gay</h1>');
+            popup.onbeforeunload = () => {
+                alert('Gay');
+                popup.focus();
+                return false;
+            };
+        });
+	
+	
+	
+	
+	
+	
+	    function startGame() {
+
+            gameLoop();
+        }
+		
+		
+	
+
+
+		
+		
+
+	
+	
+	
+
+        // Game variables
+        const girl = {
+            x: 50,
+            y: canvas.height - 150,
+            width: 50,
+            height: 80,
+            velocityY: 0,
+            velocityX: 0,
+            jumping: false
+        };
+
+        const dog = {
+            x: girl.x - 60,
+            y: canvas.height - 100,
+            width: 40,
+            height: 40,
+            velocityX: 0,
+            velocityY: 0
+        };
+
+        const bicycles = [];
+        const wheelchairs = [];
+        const clouds = [
+            { x: canvas.width * 0.1, y: 50, speed: 0.2 },
+            { x: canvas.width * 0.5, y: 100, speed: 0.15 },
+            { x: canvas.width * 0.8, y: 200, speed: 0.1 }
+        ];
+        const gravity = 0.5;
+        let score = 0;
+		const winningScore = 100;
+        let gameSpeed = 5;
+        let bicycleInterval = 2000;
+        let wheelchairInterval = 7000; // Make wheelchairs more rare
+		        
+
+        // Handle controls
+        const keys = {
+            left: false,
+            right: false
+        };
+		
+		
+			    function gameLoop() {
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !girl.jumping) {
+                girl.velocityY = -15;
+                girl.jumping = true;
+            }
+            if (e.code === 'ArrowLeft') keys.left = true;
+            if (e.code === 'ArrowRight') keys.right = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowLeft') keys.left = false;
+            if (e.code === 'ArrowRight') keys.right = false;
+        });
+
+        function createBicycle() {
+            const size = (Math.random() * 40 + 30) * 1.5;
+            bicycles.push({
+                x: canvas.width,
+                y: canvas.height - size - 50,
+                width: size,
+                height: size,
+                speed: gameSpeed + Math.random() * 2 - 1,
+                hitbox: {
+                    xOffset: size * 0.25,
+                    yOffset: size * 0.25,
+                    width: size * 0.5,
+                    height: size * 0.5
+                }
+            });
+        }
+
+        function createWheelchair() {
+            const size = (Math.random() * 30 + 30) * 1.4; // 10% smaller
+            wheelchairs.push({
+                x: canvas.width,
+                y: canvas.height - size - 50,
+                width: size,
+                height: size,
+                speed: (gameSpeed / 2.5) + Math.random() * 0.4, // 20% slower
+                hitbox: {
+                    xOffset: size * 0.2, // Adjust hitbox for wheelchair
+                    yOffset: size * 0.3,
+                    width: size * 0.6,
+                    height: size * 0.5
+                }
+            });
+        }
+		
+		        function checkGameState() {
+            if (score >= winningScore) {
+                alert('Congratulations! You won the game with 100 points!');
+                document.location.reload(); // Restart the game
+            }
+        }
+
+        function update() {
+            // Update girl
+            girl.y += girl.velocityY;
+            girl.velocityY += gravity;
+
+            if (keys.left) girl.x -= 2.5;
+            if (keys.right) girl.x += 2.5;
+
+            // Constrain girl within canvas bounds
+            if (girl.x < 0) girl.x = 0;
+            if (girl.x + girl.width > canvas.width) girl.x = canvas.width - girl.width;
+
+            if (girl.y > canvas.height - girl.height - 50) {
+                girl.y = canvas.height - girl.height - 50;
+                girl.jumping = false;
+            }
+
+            // Update dog physics
+            const leashLength = 60;
+            const leashElasticity = 0.05;
+            const dx = girl.x - dog.x;
+            const dy = girl.y - dog.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > leashLength) {
+                const angle = Math.atan2(dy, dx);
+                const excessLength = distance - leashLength;
+                dog.velocityX += Math.cos(angle) * excessLength * leashElasticity;
+                dog.velocityY += Math.sin(angle) * excessLength * leashElasticity;
+
+                if (excessLength > leashLength / 2 && dog.y >= canvas.height - dog.height - 50) {
+                    dog.velocityY = -10;
+                }
+            }
+
+            dog.velocityX += (Math.random() - 0.5) * 0.5;
+            dog.velocityY += (Math.random() - 0.5) * 0.5;
+            dog.velocityY += gravity;
+            dog.x += dog.velocityX;
+            dog.y += dog.velocityY;
+            dog.velocityX *= 0.9;
+            dog.velocityY *= 0.9;
+
+            if (dog.y > canvas.height - dog.height - 50) {
+                dog.y = canvas.height - dog.height - 50;
+                dog.velocityY = 0;
+            }
+
+            // Update bicycles
+            for (let i = bicycles.length - 1; i >= 0; i--) {
+                bicycles[i].x -= bicycles[i].speed;
+                if (bicycles[i].x + bicycles[i].width < 0) {
+                    bicycles.splice(i, 1);
+                    score++;
+                    document.getElementById('score').textContent = score;
+                }
+
+                const bicycleHitbox = {
+                    x: bicycles[i].x + bicycles[i].hitbox.xOffset,
+                    y: bicycles[i].y + bicycles[i].hitbox.yOffset,
+                    width: bicycles[i].hitbox.width,
+                    height: bicycles[i].hitbox.height
+                };
+
+                if (
+                    girl.x < bicycleHitbox.x + bicycleHitbox.width &&
+                    girl.x + girl.width > bicycleHitbox.x &&
+                    girl.y < bicycleHitbox.y + bicycleHitbox.height &&
+                    girl.y + girl.height > bicycleHitbox.y
+                ) {
+                    alert('Game Over! Your Score: ' + score);
+                    document.location.reload();
+                }
+
+                if (
+                    dog.x < bicycleHitbox.x + bicycleHitbox.width &&
+                    dog.x + dog.width > bicycleHitbox.x &&
+                    dog.y < bicycleHitbox.y + bicycleHitbox.height &&
+                    dog.y + dog.height > bicycleHitbox.y
+                ) {
+                    alert('Yritä uudelleen" ' + score);
+                    document.location.reload();
+                }
+            }
+
+            // Update wheelchairs
+            for (let i = wheelchairs.length - 1; i >= 0; i--) {
+                wheelchairs[i].x -= wheelchairs[i].speed;
+                if (wheelchairs[i].x + wheelchairs[i].width < 0) {
+                    wheelchairs.splice(i, 1);
+                    score++;
+                    document.getElementById('score').textContent = score;
+                }
+
+                const wheelchairHitbox = {
+                    x: wheelchairs[i].x + wheelchairs[i].hitbox.xOffset,
+                    y: wheelchairs[i].y + wheelchairs[i].hitbox.yOffset,
+                    width: wheelchairs[i].hitbox.width,
+                    height: wheelchairs[i].hitbox.height
+                };
+
+                if (
+                    girl.x < wheelchairHitbox.x + wheelchairHitbox.width &&
+                    girl.x + girl.width > wheelchairHitbox.x &&
+                    girl.y < wheelchairHitbox.y + wheelchairHitbox.height &&
+                    girl.y + girl.height > wheelchairHitbox.y
+                ) {
+                    alert('Yritä uudelleen! Pisteet: ' + score);
+                    document.location.reload();
+                }
+
+                if (
+                    dog.x < wheelchairHitbox.x + wheelchairHitbox.width &&
+                    dog.x + dog.width > wheelchairHitbox.x &&
+                    dog.y < wheelchairHitbox.y + wheelchairHitbox.height &&
+                    dog.y + dog.height > wheelchairHitbox.y
+                ) {
+                    alert('Yritä uudelleen! Pisteet: ' + score);
+                    document.location.reload();
+                }
+            }
+
+            // Update clouds
+            for (let cloud of clouds) {
+                cloud.x -= cloud.speed;
+                if (cloud.x + 200 < 0) {
+                    cloud.x = canvas.width;
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw clouds
+            for (let i = 0; i < clouds.length; i++) {
+                const cloud = clouds[i];
+                ctx.drawImage(cloudImages[i % cloudImages.length], cloud.x, cloud.y, 200, 100);
+            }
+
+            // Draw ground
+            ctx.fillStyle = 'green';
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+
+            // Draw girl
+            ctx.drawImage(girlImage, girl.x, girl.y, girl.width, girl.height);
+
+            // Draw dog
+            ctx.drawImage(dogImage, dog.x, dog.y, dog.width, dog.height);
+
+            // Draw leash
+            ctx.beginPath();
+            ctx.moveTo(girl.x + girl.width / 2, girl.y + girl.height / 2);
+            ctx.lineTo(dog.x + dog.width / 2, dog.y + dog.height / 2);
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw bicycles
+            for (let bicycle of bicycles) {
+                ctx.drawImage(bicycleImage, bicycle.x, bicycle.y, bicycle.width, bicycle.height);
+            }
+
+            // Draw wheelchairs
+            for (let wheelchair of wheelchairs) {
+                ctx.drawImage(wheelchairImage, wheelchair.x, wheelchair.y, wheelchair.width, wheelchair.height);
+            }
+        }
+		
+
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+					        if (score >= winningScore) {
+                alert('Kiitos kulta kun käytit Bellan! Nähdään Ravintola Paulettessa 14.2 kl. 20.00 <3');
+                document.location.reload(); // Restart the game
+            }
+        }
+
+        let bicycleSpawner = setInterval(createBicycle, bicycleInterval);
+        let wheelchairSpawner = setInterval(createWheelchair, wheelchairInterval);
+		
+        gameLoop();
+		}
+		
+    </script>
+	
+</body>
+</html>
